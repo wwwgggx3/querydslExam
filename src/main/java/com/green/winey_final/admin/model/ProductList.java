@@ -1,6 +1,8 @@
 package com.green.winey_final.admin.model;
 
 import lombok.*;
+import org.springframework.data.domain.Pageable;
+
 
 import java.util.List;
 
@@ -12,5 +14,6 @@ import java.util.List;
 @AllArgsConstructor
 public class ProductList {
     private PageDto page;
+    private Pageable pageable;
     private List<ProductVo> productList;
 }

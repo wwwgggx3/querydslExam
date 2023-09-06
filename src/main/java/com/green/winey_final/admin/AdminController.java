@@ -1,9 +1,16 @@
 package com.green.winey_final.admin;
 
 import com.green.winey_final.admin.model.*;
+import com.green.winey_final.repository.support.PageCustom;
+import com.green.winey_final.repository.support.PageableCustom;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -72,6 +79,22 @@ public class AdminController {
         dto.setType(type);
         dto.setSort(sort);
         return SERVICE.getProduct(dto);
+    }
+
+    @Operation(summary = "등록된 상품 리스트 출력(피그마: 등록상품리스트 페이지)P", description = "page값 = 1(default), row값 = 20(default)<br>"
+            + "default값은 임시로 넣은 것이니 수정이 필요합니다.<br>"
+            + "type -> 기본값(0) / 상품번호(productId)/세일가격(salePrice)/할인률(sale)/정상가(price)/추천상품(recommend)/재고수량=품절여부(quantity)<br>"
+            + "sort -> 기본값(0) / 오름차순(asc) / 내림차순(desc)")
+    @GetMapping("/product/list2")
+    public PageCustom<ProductVo> getProduct2(@ParameterObject @PageableDefault(sort="productId", direction = Sort.Direction.DESC, page = 0, size = 20)
+                                           Pageable pageable,
+                                             @RequestParam(required = false) String str) {
+//        SelListDto dto = new SelListDto();
+//        dto.setRow(row);
+//        dto.setPage(page);
+//        dto.setType(type);
+//        dto.setSort(sort);
+        return SERVICE.getProduct1(pageable, str);
     }
 
     //할인률 등록 상품 리스트 출력
