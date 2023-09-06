@@ -371,7 +371,6 @@ public class AdminService {
 //            whereBuilder.and(productEntity.nmKor.contains(str));
 //        }
 
-
         List<ProductVo> list = queryFactory.select(new QProductVo(productEntity.productId, productEntity.nmKor, productEntity.price, productEntity.promotion, productEntity.beginner, productEntity.quantity, saleEntity.sale, saleEntity.salePrice))
                 .from(productEntity)
                 .leftJoin(saleEntity)
@@ -641,10 +640,11 @@ public class AdminService {
         if(!pageable.getSort().isEmpty()) {
             for(Sort.Order order : pageable.getSort()) {
                 Order direction = order.getDirection().isAscending() ? Order.ASC : Order.DESC;
+                String str=order.getProperty();
                 //order의 property값이 스웨거 입력칸 sort의 number
                 switch (order.getProperty().toLowerCase()) {
-                    case "productId": orders.add(new OrderSpecifier(direction, productEntity.productId)); break;
-                    case "salePrice": orders.add(new OrderSpecifier(direction, saleEntity.salePrice)); break;
+                    case "productid": orders.add(new OrderSpecifier(direction, productEntity.productId)); break;
+                    case "saleprice": orders.add(new OrderSpecifier(direction, saleEntity.salePrice)); break;
                     case "sale": orders.add(new OrderSpecifier(direction, saleEntity.sale)); break;
                     case "price": orders.add(new OrderSpecifier(direction, productEntity.price)); break;
                     case "recommend":

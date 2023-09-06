@@ -88,7 +88,7 @@ public class AdminController {
     @GetMapping("/product/list2")
     public PageCustom<ProductVo> getProduct2(@ParameterObject @PageableDefault(sort="productId", direction = Sort.Direction.ASC, page = 0, size = 20)
                                            Pageable pageable,
-                                             @RequestParam(required = false) String str) {
+                                           @RequestParam(required = false) String str) {
 
         return SERVICE.getProduct1(pageable, str);
     }
