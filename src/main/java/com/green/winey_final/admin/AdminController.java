@@ -81,19 +81,15 @@ public class AdminController {
         return SERVICE.getProduct(dto);
     }
 
-    @Operation(summary = "등록된 상품 리스트 출력(피그마: 등록상품리스트 페이지)P", description = "page값 = 1(default), row값 = 20(default)<br>"
-            + "default값은 임시로 넣은 것이니 수정이 필요합니다.<br>"
+    @Operation(summary = "등록된 상품 리스트 출력(피그마: 등록상품리스트 페이지)JPA", description = "정렬 안한 기본 페이지는 productId,asc 가 기본값입니다.<br>"
+            + "page -> 0이 1페이지입니다.<br> row -> 한 페이지 당 보여줄 갯수"
             + "type -> 기본값(0) / 상품번호(productId)/세일가격(salePrice)/할인률(sale)/정상가(price)/추천상품(recommend)/재고수량=품절여부(quantity)<br>"
             + "sort -> 기본값(0) / 오름차순(asc) / 내림차순(desc)")
     @GetMapping("/product/list2")
-    public PageCustom<ProductVo> getProduct2(@ParameterObject @PageableDefault(sort="productId", direction = Sort.Direction.DESC, page = 0, size = 20)
+    public PageCustom<ProductVo> getProduct2(@ParameterObject @PageableDefault(sort="productId", direction = Sort.Direction.ASC, page = 0, size = 20)
                                            Pageable pageable,
                                              @RequestParam(required = false) String str) {
-//        SelListDto dto = new SelListDto();
-//        dto.setRow(row);
-//        dto.setPage(page);
-//        dto.setType(type);
-//        dto.setSort(sort);
+
         return SERVICE.getProduct1(pageable, str);
     }
 

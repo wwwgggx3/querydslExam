@@ -366,6 +366,11 @@ public class AdminService {
             whereBuilder.and(productEntity.nmKor.contains(str));
         }
 
+//        if(str != null) {
+////            switch (str.equals())
+//            whereBuilder.and(productEntity.nmKor.contains(str));
+//        }
+
 
         List<ProductVo> list = queryFactory.select(new QProductVo(productEntity.productId, productEntity.nmKor, productEntity.price, productEntity.promotion, productEntity.beginner, productEntity.quantity, saleEntity.sale, saleEntity.salePrice))
                 .from(productEntity)
@@ -382,6 +387,7 @@ public class AdminService {
                 .from(productEntity)
                 .leftJoin(saleEntity)
                 .on(saleEntity.productEntity.eq(productEntity));
+
         Page<ProductVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
 
         return new PageCustom<ProductVo>(map.getContent(), map.getPageable(), map.getTotalElements());
