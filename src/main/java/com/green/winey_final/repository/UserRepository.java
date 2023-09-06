@@ -29,5 +29,4 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     UserEntity findByUnmAndTel(String unm, String tel);
 
 
-
 }

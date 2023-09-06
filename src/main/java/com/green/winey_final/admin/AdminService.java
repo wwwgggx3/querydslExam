@@ -3,20 +3,21 @@ package com.green.winey_final.admin;
 
 import com.green.winey_final.admin.model.*;
 import com.green.winey_final.admin.model.QProductVo;
+import com.green.winey_final.admin.model.QUserVo;
 import com.green.winey_final.common.utils.MyFileUtils;
 import com.green.winey_final.repository.*;
+import com.green.winey_final.repository.support.DynamicQueryWhere;
 import com.green.winey_final.repository.support.PageCustom;
-import com.green.winey_final.repository.support.PageableCustom;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -32,7 +33,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import static com.green.winey_final.common.entity.QProductEntity.productEntity;
+import static com.green.winey_final.common.entity.QRegionNmEntity.regionNmEntity;
 import static com.green.winey_final.common.entity.QSaleEntity.saleEntity;
+import static com.green.winey_final.common.entity.QUserEntity.userEntity;
 
 @Slf4j
 @Service
@@ -40,6 +43,8 @@ public class AdminService {
 
     private final AdminMapper MAPPER;
     private final String FILE_DIR;
+
+    private final DynamicQueryWhere dynamicWhere;
 
     private final ProductRepository productRep;
     private final FeatureRepository featureRep;
@@ -53,9 +58,10 @@ public class AdminService {
     private final JPAQueryFactory queryFactory;
 
     @Autowired
-    public AdminService(AdminMapper MAPPER, @Value("${file.dir}") String FILE_DIR, ProductRepository productRep, FeatureRepository featureRep, SaleRepository saleRep, AromaRepository aromaRep, CountryRepository countryRep, CategoryRepository categoryRep, AromaCategoryRepository aromaCategoryRep, WinePairingRepository winePairingRep, SmallCategoryRepository smallCategoryRep, JPAQueryFactory queryFactory) {
+    public AdminService(AdminMapper MAPPER, @Value("${file.dir}") String FILE_DIR, DynamicQueryWhere dynamicWhere, ProductRepository productRep, FeatureRepository featureRep, SaleRepository saleRep, AromaRepository aromaRep, CountryRepository countryRep, CategoryRepository categoryRep, AromaCategoryRepository aromaCategoryRep, WinePairingRepository winePairingRep, SmallCategoryRepository smallCategoryRep, JPAQueryFactory queryFactory) {
         this.MAPPER = MAPPER;
         this.FILE_DIR = MyFileUtils.getAbsolutePath(FILE_DIR);
+        this.dynamicWhere = dynamicWhere;
 
         this.productRep = productRep;
         this.featureRep = featureRep;
@@ -418,6 +424,44 @@ public class AdminService {
                 .build();
     }
 
+    public PageCustom<UserVo> getUserList2(Pageable pageable, String str) {
+
+        BooleanBuilder whereBuilder = new BooleanBuilder();
+        if(str != null) {
+            switch(pageable.getSort().toString().toLowerCase()) {
+                case "searchusername": whereBuilder.and(userEntity.unm.contains(str)); break; //roletype = user 웨얼 조건 넣기
+                case "searchuseremail": whereBuilder.and(userEntity.email.contains(str)); break;
+            }
+
+        }
+//        BooleanExpression where;
+//        if(str != null) {
+//            switch(pageable.getSort().toString().toLowerCase()) {
+//                case "searchusername": dynamicWhere.eqUserName(str); break; //roletype = user 웨얼 조건 넣기
+//                case "searchuseremail": whereBuilder.and(userEntity.email.contains(str)); break;
+//            }
+//
+//        }
+//        dynamicWhere.eqUserName();
+
+        List<UserVo> list = queryFactory.select(new QUserVo(userEntity.userId, userEntity.email, userEntity.unm, regionNmEntity.regionNmId.intValue(), userEntity.createdAt.stringValue()))
+                .from(userEntity)
+                .orderBy(getAllOrderSpecifiers(pageable))
+                .where(dynamicWhere.eqUserName(str),
+                       dynamicWhere.eqUserEmail(str))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(userEntity.count())// count()와 countDistinct() 차이 알기
+                .from(userEntity);
+
+        Page<UserVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
+
+        return new PageCustom<UserVo>(map.getContent(), map.getPageable(), map.getTotalElements());
+    }
+
     //가입회원 상세 주문 내역(회원pk별) +페이징 처리
     public UserOrderDetailList getUserOrder(Long userId, SelListDto dto) {
         UserOrderDetailDto detailDto = new UserOrderDetailDto();
@@ -651,6 +695,12 @@ public class AdminService {
                         orders.add(new OrderSpecifier(direction, productEntity.promotion));
                         orders.add(new OrderSpecifier(direction, productEntity.beginner)); break; //
                     case "quantity": orders.add(new OrderSpecifier(direction, saleEntity.sale)); break;
+
+                    //가입회원 리스트 정렬
+                    case "userid": orders.add(new OrderSpecifier(direction, userEntity.userId)); break;
+                    case "pickup": orders.add(new OrderSpecifier(direction, userEntity.regionNmEntity.regionNmId)); break;
+
+
                 }
             }
         }
