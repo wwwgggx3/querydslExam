@@ -430,42 +430,9 @@ public class AdminService {
                 .build();
     }
 
-    public PageCustom<UserVo> getUserList2(Pageable pageable, String str) {
+    public PageCustom<UserVo> getUserList2(Pageable pageable, String searchType, String str) {
 
-        BooleanBuilder whereBuilder = new BooleanBuilder();
-        if(str != null) {
-            switch(pageable.getSort().toString().toLowerCase()) {
-                case "searchusername": whereBuilder.and(userEntity.unm.contains(str)); break; //roletype = user 웨얼 조건 넣기
-                case "searchuseremail": whereBuilder.and(userEntity.email.contains(str)); break;
-            }
-
-        }
-//        BooleanExpression where;
-//        if(str != null) {
-//            switch(pageable.getSort().toString().toLowerCase()) {
-//                case "searchusername": dynamicWhere.eqUserName(str); break; //roletype = user 웨얼 조건 넣기
-//                case "searchuseremail": whereBuilder.and(userEntity.email.contains(str)); break;
-//            }
-//
-//        }
-//        dynamicWhere.eqUserName();
-
-        List<UserVo> list = queryFactory.select(new QUserVo(userEntity.userId, userEntity.email, userEntity.unm, regionNmEntity.regionNmId.intValue(), userEntity.createdAt.stringValue()))
-                .from(userEntity)
-                .orderBy(getAllOrderSpecifiers(pageable))
-                .where(dynamicWhere.eqUserName(str),
-                       dynamicWhere.eqUserEmail(str))
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
-
-        JPAQuery<Long> countQuery = queryFactory
-                .select(userEntity.count())// count()와 countDistinct() 차이 알기
-                .from(userEntity);
-
-        Page<UserVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
-
-        return new PageCustom<UserVo>(map.getContent(), map.getPageable(), map.getTotalElements());
+        return adminWorkRep.selUserAll(pageable, searchType, str);
     }
 
     //가입회원 상세 주문 내역(회원pk별) +페이징 처리

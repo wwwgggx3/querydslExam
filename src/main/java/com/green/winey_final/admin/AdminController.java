@@ -81,10 +81,11 @@ public class AdminController {
         return SERVICE.getProduct(dto);
     }
 
-    @Operation(summary = "등록된 상품 리스트 출력(피그마: 등록상품리스트 페이지)JPA", description = "정렬 안한 기본 페이지는 productId,asc 가 기본값입니다.<br>"
-            + "page -> 0이 1페이지입니다.<br> row -> 한 페이지 당 보여줄 갯수"
-            + "type -> 기본값(0) / 상품번호(productId)/세일가격(salePrice)/할인률(sale)/정상가(price)/추천상품(recommend)/재고수량=품절여부(quantity)<br>"
-            + "sort -> 기본값(0) / 오름차순(asc) / 내림차순(desc)")
+    @Operation(summary = "JPA 등록된 상품 리스트 출력(피그마: 등록상품리스트 페이지)", description = "정렬 안한 기본 페이지는 productId,asc 가 기본값입니다.<br>"
+            + "page -> 0이 1페이지입니다.<br> size(row) -> 한 페이지 당 보여줄 갯수<br>"
+            + "sort ->  입력 예시) productid,asc -> 상품번호 기준으로 오름차순 정렬한다는 의미<br> 정렬기준 ->상품번호(productId)/세일가격(salePrice)/할인률(sale)/정상가(price)/추천상품(recommend)/재고수량=품절여부(quantity)<br>"
+            + "정렬 ->  오름차순(asc) / 내림차순(desc)<br>"
+            + "str -> 검색어 <br>")
     @GetMapping("/product/list2")
     public PageCustom<ProductVo> getProduct2(@ParameterObject @PageableDefault(sort="productId", direction = Sort.Direction.ASC, page = 0, size = 20)
                                            Pageable pageable,
@@ -122,15 +123,18 @@ public class AdminController {
         return SERVICE.getUserList(dto);
     }
 
-    @Operation(summary = "가입 회원 리스트 (페이징처리)(피그마: 가입회원리스트 페이지)P", description = "page (기본값1), row (기본값15) 임시로 해놓은거라 수정이 필요합니다.<br>"
-            + "type -> 기본값(0) / 픽업지역(pickUp) / 회원번호(userId)<br>"
-            + "sort -> 기본값(0) / 오름차순(asc) / 내림차순(desc)")
+    @Operation(summary = "JPA가입 회원 리스트 (페이징처리)(피그마: 가입회원리스트 페이지)", description = "page (기본값1), row (기본값15) 임시로 해놓은거라 수정이 필요합니다.<br>"
+            + "page -> 0이 1페이지입니다.<br> row -> 한 페이지 당 보여줄 갯수<br>"
+            + "sort ->  입력 예시) userId,asc <br> - 입력회원번호(userId) / 픽업지역(pickUp) <br> - 오름차순(asc) / 내림차순(desc)<br>"
+            + "searchType(검색타입) -> unm(회원이름) / email(이메일) <br>"
+            + "str ->  검색어")
     @GetMapping("/user/list2")
-    public PageCustom<UserVo> getUserList2(@ParameterObject @PageableDefault(sort="pickUp", direction = Sort.Direction.ASC, page = 0, size = 20)
+    public PageCustom<UserVo> getUserList2(@ParameterObject @PageableDefault(sort="userId", direction = Sort.Direction.ASC, page = 0, size = 20)
                                      Pageable pageable,
-                                 @RequestParam(required = false) String str) {
+                                     @RequestParam(required = false) String searchType,
+                                     @RequestParam(required = false) String str) {
 
-        return SERVICE.getUserList2(pageable, str);
+        return SERVICE.getUserList2(pageable, searchType, str);
     }
 
     //가입 회원별 상세 주문 내역(회원pk별) +페이징 처리
