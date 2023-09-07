@@ -1,15 +1,21 @@
 package com.green.winey_final.repository;
 
-import com.green.winey_final.admin.model.ProductVo;
+import com.green.winey_final.admin.model.*;
 import com.green.winey_final.admin.model.QProductVo;
+import com.green.winey_final.admin.model.QUserInfo;
+import com.green.winey_final.admin.model.QUserOrderDetailVo;
 import com.green.winey_final.admin.model.QUserVo;
-import com.green.winey_final.admin.model.UserVo;
 import com.green.winey_final.repository.support.PageCustom;
 import com.nimbusds.oauth2.sdk.util.StringUtils;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.ConstantImpl;
+import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.StringTemplate;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +28,15 @@ import org.springframework.stereotype.Repository;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.green.winey_final.common.entity.QOrderDetailEntity.orderDetailEntity;
+import static com.green.winey_final.common.entity.QOrderEntity.orderEntity;
 import static com.green.winey_final.common.entity.QProductEntity.productEntity;
 import static com.green.winey_final.common.entity.QRegionNmEntity.regionNmEntity;
 import static com.green.winey_final.common.entity.QSaleEntity.saleEntity;
+import static com.green.winey_final.common.entity.QStoreEntity.storeEntity;
 import static com.green.winey_final.common.entity.QUserEntity.userEntity;
+import static com.querydsl.core.group.GroupBy.groupBy;
+import static com.querydsl.core.types.ExpressionUtils.count;
 
 @Repository
 @RequiredArgsConstructor
@@ -81,6 +92,75 @@ public class AdminWorkRepositoryImpl implements AdminQdslRepository {
         Page<UserVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
 
         return new PageCustom<UserVo>(map.getContent(), map.getPageable(), map.getTotalElements());
+    }
+
+    @Override
+    public PageCustom<UserOrderDetailVo> selUserOrderByUserId(Long userId, Pageable pageable) {
+//        StringTemplate formattedDate = Expressions.dateTemplate(
+//                "DATE_FORMAT({0}, {1})",
+//                UserOrderDetailVo,
+//                ConstantImpl.create("%y-%m-%d"));
+
+        List<UserOrderDetailVo> list = queryFactory
+                .select(new QUserOrderDetailVo(orderEntity.orderId, orderEntity.orderDate.stringValue(), productEntity.nmKor, orderEntity.totalOrderPrice.intValue(), storeEntity.nm, orderEntity.orderStatus.intValue()))
+                .from(userEntity)
+                .innerJoin(orderEntity)
+                .on(userEntity.eq(orderEntity.userEntity))
+                .innerJoin(orderDetailEntity)
+                .on(orderEntity.orderId.eq(orderDetailEntity.orderEntity.orderId))
+                .innerJoin(productEntity)
+                .on(productEntity.productId.eq(orderDetailEntity.productEntity.productId))
+                .innerJoin(storeEntity)
+                .on(orderEntity.storeEntity.storeId.eq(storeEntity.storeId))
+                .where(userEntity.userId.eq(userId))
+                .groupBy(orderEntity)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(userEntity.userId.count())// count()와 countDistinct() 차이 알기
+                .from(userEntity)
+                .innerJoin(orderEntity)
+                .on(userEntity.userId.eq(orderEntity.orderId))
+                .innerJoin(orderDetailEntity)
+                .on(orderEntity.orderId.eq(orderDetailEntity.orderEntity.orderId))
+                .innerJoin(productEntity)
+                .on(productEntity.productId.eq(orderDetailEntity.productEntity.productId))
+                .innerJoin(storeEntity)
+                .on(orderEntity.storeEntity.storeId.eq(storeEntity.storeId))
+                .where(userEntity.userId.eq(userId))
+                .groupBy(orderEntity.orderId);
+
+        Page<UserOrderDetailVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
+
+        return new PageCustom<UserOrderDetailVo>(map.getContent(), map.getPageable(), map.getTotalElements());
+    }
+
+    @Override
+    public UserInfo selUserInfoByUserId(Long userId, Pageable pageable) {
+        UserInfo user = queryFactory.select(new QUserInfo(userEntity.userId, userEntity.email, userEntity.unm,
+                ExpressionUtils.as(orderEntity.totalOrderPrice.sum().intValue(), "sumOrderPrice"),
+                ExpressionUtils.as(orderEntity.orderId.count().intValue(), "orderCount") //ExpressionUtils.as(JPAExpressions.select(count(orderEntity.orderId)).from(orderEntity),"orderCount")
+                ))
+                .from(userEntity)
+                .innerJoin(orderEntity)
+                .on(userEntity.eq(orderEntity.userEntity))
+                .where(userEntity.userId.eq(userId))
+                .fetchOne();
+
+//        JPAQuery<Long> countQuery = queryFactory
+//                .select(userEntity.count())// count()와 countDistinct() 차이 알기
+//                .from(userEntity)
+//                .innerJoin(orderEntity)
+//                .on(userEntity.userId.eq(orderEntity.orderId))
+//                .where(userEntity.userId.eq(userId));
+//
+//        Page<UserInfo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
+
+//        new PageCustom<UserInfo>(map.getContent(), map.getPageable(), map.getTotalElements());
+
+        return user;
     }
 
 
