@@ -160,7 +160,7 @@ public class AdminController {
             +"type -> 기본값(0) / 주문날짜(orderDate) / 픽업매장(storeNm) / 주문상태(orderStatus)<br>"
             + "sort -> 기본값(0) / 오름차순(asc) / 내림차순(desc)")
     @GetMapping("/{userId}/order2")
-    public UserOrderDetailList getUserOrder2(@PathVariable Long userId, @ParameterObject @PageableDefault(sort="userId", direction = Sort.Direction.ASC, page = 0, size = 20)
+    public UserOrderDetailList getUserOrder2(@PathVariable Long userId, @ParameterObject @PageableDefault(sort="orderDate", direction = Sort.Direction.ASC, page = 0, size = 20)
                                                          Pageable pageable) {
 
         return SERVICE.getUserOrder2(userId, pageable);
@@ -192,6 +192,19 @@ public class AdminController {
 
         return SERVICE.getOrder(dto);
     }
+
+    //주문 내역
+    @Operation(summary = "JPA주문 내역 출력(피그마:주문내역관리 페이지)P", description = "<br>"
+            + "page -> 0이 1페이지입니다.<br> row -> 한 페이지 당 보여줄 갯수<br>"
+            + "sort ->  입력 예시) orderid,desc <br> - 픽업장소(storeNm) / 픽업배송상태(orderStatus) <br> - 오름차순(asc) / 내림차순(desc)<br>")
+    @GetMapping("/order2")
+    public PageCustom<OrderListVo> getOrder2( @ParameterObject @PageableDefault(sort="orderid", direction = Sort.Direction.ASC, page = 0, size = 20)
+                                    Pageable pageable) {
+
+        return SERVICE.getOrder2(pageable);
+    }
+
+
     //상세 주문 내역 리스트 by orderId
     @Operation(summary = "상세 주문 내역 출력 by orderId(피그마:주문상세리스트)")
     @GetMapping("/order/{orderId}")
@@ -232,6 +245,22 @@ public class AdminController {
 
         return SERVICE.getStore(dto);
     }
+    //매장 리스트 출력
+    @Operation(summary = "매장 리스트 출력P", description = ""
+    + "page -> 0이 1페이지입니다.<br> row -> 한 페이지 당 보여줄 갯수<br>"
+    + "sort ->  입력 예시) storeid,asc <br> - 매장번호(storeid) / 매장이름(storenm) / 주소(address) / 전화번호(tel) <br> - 오름차순(asc) / 내림차순(desc)<br>"
+    + "searchType(검색타입) -> storename(매장명) / storeaddress(매장주소) / storetel(매장전화번호) <br>"
+    + "str ->  검색어")
+    @GetMapping("/store2")
+    public PageCustom<StoreVo> getStore2(@ParameterObject @PageableDefault(sort="storeid", direction = Sort.Direction.ASC, page = 0, size = 20)
+                                             Pageable pageable,
+                                         @RequestParam(required = false)String searchType,
+                                         @RequestParam(required = false)String str) {
+
+
+        return SERVICE.getStore2(pageable, searchType, str);
+    }
+
     //매장 정보 수정
     @Operation(summary = "매장 정보 수정", description = "전화번호 유효성 검사 (2~3자리 숫자)-(3~4자리 숫자)-(4자리 숫자), 실패시 코드 : 0 ")
     @PutMapping("/store/{storeId}")

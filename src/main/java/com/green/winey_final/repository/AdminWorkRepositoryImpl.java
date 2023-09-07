@@ -1,21 +1,18 @@
 package com.green.winey_final.repository;
 
 import com.green.winey_final.admin.model.*;
+import com.green.winey_final.admin.model.QOrderListVo;
 import com.green.winey_final.admin.model.QProductVo;
+import com.green.winey_final.admin.model.QStoreVo;
 import com.green.winey_final.admin.model.QUserInfo;
 import com.green.winey_final.admin.model.QUserOrderDetailVo;
 import com.green.winey_final.admin.model.QUserVo;
 import com.green.winey_final.repository.support.PageCustom;
-import com.nimbusds.oauth2.sdk.util.StringUtils;
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.ConstantImpl;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
-import com.querydsl.core.types.dsl.StringTemplate;
-import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +32,6 @@ import static com.green.winey_final.common.entity.QRegionNmEntity.regionNmEntity
 import static com.green.winey_final.common.entity.QSaleEntity.saleEntity;
 import static com.green.winey_final.common.entity.QStoreEntity.storeEntity;
 import static com.green.winey_final.common.entity.QUserEntity.userEntity;
-import static com.querydsl.core.group.GroupBy.groupBy;
-import static com.querydsl.core.types.ExpressionUtils.count;
 
 @Repository
 @RequiredArgsConstructor
@@ -107,11 +102,12 @@ public class AdminWorkRepositoryImpl implements AdminQdslRepository {
                 .innerJoin(orderEntity)
                 .on(userEntity.eq(orderEntity.userEntity))
                 .innerJoin(orderDetailEntity)
-                .on(orderEntity.orderId.eq(orderDetailEntity.orderEntity.orderId))
+                .on(orderEntity.eq(orderDetailEntity.orderEntity))
                 .innerJoin(productEntity)
-                .on(productEntity.productId.eq(orderDetailEntity.productEntity.productId))
+                .on(productEntity.eq(orderDetailEntity.productEntity))
                 .innerJoin(storeEntity)
-                .on(orderEntity.storeEntity.storeId.eq(storeEntity.storeId))
+                .on(orderEntity.storeEntity.eq(storeEntity))
+                .orderBy(getAllOrderSpecifiers(pageable))
                 .where(userEntity.userId.eq(userId))
                 .groupBy(orderEntity)
                 .offset(pageable.getOffset())
@@ -163,6 +159,70 @@ public class AdminWorkRepositoryImpl implements AdminQdslRepository {
         return user;
     }
 
+    @Override
+    public PageCustom<OrderListVo> selOrderAll(Pageable pageable) {
+        List<OrderListVo> list = queryFactory
+                .select(new QOrderListVo(orderEntity.orderId, orderEntity.orderDate.stringValue(), userEntity.email, productEntity.nmKor,
+                orderDetailEntity.salePrice.sum().intValue(),
+                orderDetailEntity.quantity.sum().intValue(),
+                orderEntity.totalOrderPrice.intValue(),
+                orderEntity.payment.intValue(), storeEntity.nm,
+                orderEntity.orderStatus.intValue()))
+                .from(orderEntity)
+                .innerJoin(userEntity)
+                .on(orderEntity.userEntity.eq(userEntity))
+                .join(storeEntity)
+                .on(orderEntity.storeEntity.eq(storeEntity))
+                .join(orderDetailEntity)
+                .on(orderEntity.eq(orderDetailEntity.orderEntity))
+                .join(productEntity)
+                .on(orderDetailEntity.productEntity.eq(productEntity))
+                .groupBy(orderEntity.orderId)
+                .orderBy(getAllOrderSpecifiers(pageable))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(orderEntity.orderId.count())
+//                .select(orderEntity.orderId.countDistinct())
+                .from(orderEntity)
+                .innerJoin(userEntity)
+                .on(orderEntity.userEntity.eq(userEntity))
+                .join(storeEntity)
+                .on(orderEntity.storeEntity.eq(storeEntity))
+                .join(orderDetailEntity)
+                .on(orderEntity.eq(orderDetailEntity.orderEntity))
+                .join(productEntity)
+                .on(orderDetailEntity.productEntity.eq(productEntity));
+//                .groupBy(orderEntity.orderId); //groupBy하면 totalElements 제대로 안나옴
+
+        Page<OrderListVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
+
+        return new PageCustom<OrderListVo>(map.getContent(), map.getPageable(), map.getTotalElements());
+    }
+
+    @Override
+    public PageCustom<StoreVo> selStoreAll(Pageable pageable, String searchType, String str) {
+        List<StoreVo> list = queryFactory.select(new QStoreVo(storeEntity.storeId, regionNmEntity.regionNmId, storeEntity.nm, storeEntity.tel, storeEntity.address))
+                .from(storeEntity)
+                .where(eqStoreNm(searchType, str),
+                        eqStoreAddr(searchType, str),
+                        eqStoreTel(searchType, str))
+                .orderBy(getAllOrderSpecifiers(pageable))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(storeEntity.count())
+                .from(storeEntity);
+
+        Page<StoreVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
+
+        return new PageCustom<StoreVo>(map.getContent(), map.getPageable(), map.getTotalElements());
+    }
+
 
     //정렬
     private OrderSpecifier[] getAllOrderSpecifiers(Pageable pageable) {
@@ -186,6 +246,22 @@ public class AdminWorkRepositoryImpl implements AdminQdslRepository {
                     //가입회원 리스트 정렬
                     case "userid": orders.add(new OrderSpecifier(direction, userEntity.userId)); break;
                     case "pickup": orders.add(new OrderSpecifier(direction, userEntity.regionNmEntity.regionNmId)); break;
+
+
+                    //주문 내역 정렬
+                    case "orderid": orders.add(new OrderSpecifier(direction, orderEntity.orderId)); break;
+                    case "orderdate": orders.add(new OrderSpecifier(direction, orderEntity.orderDate)); break;
+//                    case "storenm": orders.add(new OrderSpecifier(direction, regionNmEntity.regionNm)); break;
+                    case "orderstatus": orders.add(new OrderSpecifier(direction, orderEntity.orderStatus)); break;
+                    case "orderdatemonth": orders.add(new OrderSpecifier(direction, orderEntity.orderDate)); break;
+
+
+                    //매장 정렬
+                    case "storeid": orders.add(new OrderSpecifier(direction, storeEntity.storeId)); break; //주문내역과 공동
+                    case "storenm": orders.add(new OrderSpecifier(direction, storeEntity.nm)); break; //주문내역과 공동
+                    case "address": orders.add(new OrderSpecifier(direction, storeEntity.address)); break;
+                    case "storetel": orders.add(new OrderSpecifier(direction, storeEntity.tel)); break;
+
 
 
                 }
@@ -220,6 +296,33 @@ public class AdminWorkRepositoryImpl implements AdminQdslRepository {
         }
         return null;
 
+    }
+
+    public BooleanExpression eqStoreNm(String searchType, String str) {
+        if (searchType == null) {
+            return null;
+        } else if (searchType.equalsIgnoreCase("storename")) {
+            return storeEntity.nm.containsIgnoreCase(str);
+        }
+        return null;
+    }
+
+    public BooleanExpression eqStoreAddr(String searchType, String str) {
+        if (searchType == null) {
+            return null;
+        } else if (searchType.equalsIgnoreCase("storeaddress")) {
+            return storeEntity.address.containsIgnoreCase(str);
+        }
+        return null;
+    }
+
+    public BooleanExpression eqStoreTel(String searchType, String str) {
+        if (searchType == null) {
+            return null;
+        } else if (searchType.equalsIgnoreCase("storetel")) {
+            return storeEntity.tel.containsIgnoreCase(str);
+        }
+        return null;
     }
 
 

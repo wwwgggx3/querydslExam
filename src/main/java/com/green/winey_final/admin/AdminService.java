@@ -2,23 +2,18 @@ package com.green.winey_final.admin;
 
 
 import com.green.winey_final.admin.model.*;
-import com.green.winey_final.admin.model.QUserVo;
 import com.green.winey_final.common.utils.MyFileUtils;
 import com.green.winey_final.repository.*;
 import com.green.winey_final.repository.support.DynamicQueryWhere;
 import com.green.winey_final.repository.support.PageCustom;
-import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -491,7 +486,6 @@ public class AdminService {
         PageCustom<UserOrderDetailVo> list = adminWorkRep.selUserOrderByUserId(userId, pageable);
         UserInfo user = adminWorkRep.selUserInfoByUserId(userId, pageable);
 
-//        return list;
         return UserOrderDetailList.builder()
                 .userOrderList(list)
                 .userInfo(user)
@@ -508,16 +502,22 @@ public class AdminService {
         //상품명에 외 1 넣는 로직
         List<OrderListVo> list = MAPPER.selOrder(dto);
 
-        for(int i=0;i<list.size();i++) {
-            if(list.get(i).getCount()>1) {
-                list.get(i).setNmKor(list.get(i).getNmKor()+" 외 "+(list.get(i).getCount()-1));
-            }
-        }
+//        for(int i=0;i<list.size();i++) {
+//            if(list.get(i).getCount()>1) {
+//                list.get(i).setNmKor(list.get(i).getNmKor()+" 외 "+(list.get(i).getCount()-1));
+//            }
+//        }
 
         return OrderList.builder()
                 .page(new PageDto(maxOrder, dto.getPage(), dto.getRow()))
                 .list(list)
                 .build();
+    }
+
+    //주문 내역
+    public PageCustom<OrderListVo> getOrder2(Pageable pageable) {
+
+        return adminWorkRep.selOrderAll(pageable);
     }
 
     //상세 주문 내역 리스트 by orderId
@@ -575,6 +575,13 @@ public class AdminService {
                 .list(MAPPER.selStore(dto))
                 .build();
     }
+    //매장 리스트
+    public PageCustom<StoreVo> getStore2(Pageable pageable, String searchType, String str) {
+
+
+        return adminWorkRep.selStoreAll(pageable, searchType, str);
+    }
+
     public Long updStore(StoreInsParam param, Long storeId) {
         StoreInsDto dto = new StoreInsDto();
         dto.setStoreId(storeId);
