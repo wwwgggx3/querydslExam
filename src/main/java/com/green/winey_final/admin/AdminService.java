@@ -2,7 +2,6 @@ package com.green.winey_final.admin;
 
 
 import com.green.winey_final.admin.model.*;
-import com.green.winey_final.admin.model.QProductVo;
 import com.green.winey_final.admin.model.QUserVo;
 import com.green.winey_final.common.utils.MyFileUtils;
 import com.green.winey_final.repository.*;
@@ -11,7 +10,6 @@ import com.green.winey_final.repository.support.PageCustom;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
-import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -57,8 +55,10 @@ public class AdminService {
     private final SmallCategoryRepository smallCategoryRep;
     private final JPAQueryFactory queryFactory;
 
+    private final AdminWorkRepositoryImpl adminWorkRep;
+
     @Autowired
-    public AdminService(AdminMapper MAPPER, @Value("${file.dir}") String FILE_DIR, DynamicQueryWhere dynamicWhere, ProductRepository productRep, FeatureRepository featureRep, SaleRepository saleRep, AromaRepository aromaRep, CountryRepository countryRep, CategoryRepository categoryRep, AromaCategoryRepository aromaCategoryRep, WinePairingRepository winePairingRep, SmallCategoryRepository smallCategoryRep, JPAQueryFactory queryFactory) {
+    public AdminService(AdminMapper MAPPER, @Value("${file.dir}") String FILE_DIR, DynamicQueryWhere dynamicWhere, ProductRepository productRep, FeatureRepository featureRep, SaleRepository saleRep, AromaRepository aromaRep, CountryRepository countryRep, CategoryRepository categoryRep, AromaCategoryRepository aromaCategoryRep, WinePairingRepository winePairingRep, SmallCategoryRepository smallCategoryRep, JPAQueryFactory queryFactory, AdminWorkRepositoryImpl adminWorkRep) {
         this.MAPPER = MAPPER;
         this.FILE_DIR = MyFileUtils.getAbsolutePath(FILE_DIR);
         this.dynamicWhere = dynamicWhere;
@@ -73,6 +73,7 @@ public class AdminService {
         this.winePairingRep = winePairingRep;
         this.smallCategoryRep = smallCategoryRep;
         this.queryFactory = queryFactory;
+        this.adminWorkRep = adminWorkRep;
     }
 
     public int postProduct(MultipartFile pic, ProductInsParam param) {
@@ -367,6 +368,9 @@ public class AdminService {
 
     public PageCustom<ProductVo> getProduct1(Pageable pageable, String str) {
 
+        return adminWorkRep.selProductAll(pageable, str);
+
+/*
         BooleanBuilder whereBuilder = new BooleanBuilder();
         if(str != null) {
             whereBuilder.and(productEntity.nmKor.contains(str));
@@ -396,7 +400,9 @@ public class AdminService {
         Page<ProductVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
 
         return new PageCustom<ProductVo>(map.getContent(), map.getPageable(), map.getTotalElements());
+  */
     }
+
 
     //할인 중인 상품 리스트 출력
     public ProductSaleList getProductSale(SelListDto dto) {
