@@ -198,7 +198,7 @@ public class AdminController {
             + "page -> 0이 1페이지입니다.<br> row -> 한 페이지 당 보여줄 갯수<br>"
             + "sort ->  입력 예시) orderid,desc <br> - 픽업장소(storeNm) / 픽업배송상태(orderStatus) <br> - 오름차순(asc) / 내림차순(desc)<br>")
     @GetMapping("/order2")
-    public PageCustom<OrderListVo> getOrder2( @ParameterObject @PageableDefault(sort="orderid", direction = Sort.Direction.ASC, page = 0, size = 20)
+    public PageCustom<OrderListVo> getOrder2(@ParameterObject @PageableDefault(sort="orderid", direction = Sort.Direction.ASC, page = 0, size = 20)
                                     Pageable pageable) {
 
         return SERVICE.getOrder2(pageable);
@@ -256,8 +256,6 @@ public class AdminController {
                                              Pageable pageable,
                                          @RequestParam(required = false)String searchType,
                                          @RequestParam(required = false)String str) {
-
-
         return SERVICE.getStore2(pageable, searchType, str);
     }
 

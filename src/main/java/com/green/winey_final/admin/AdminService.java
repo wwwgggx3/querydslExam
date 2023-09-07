@@ -577,8 +577,6 @@ public class AdminService {
     }
     //매장 리스트
     public PageCustom<StoreVo> getStore2(Pageable pageable, String searchType, String str) {
-
-
         return adminWorkRep.selStoreAll(pageable, searchType, str);
     }
 
