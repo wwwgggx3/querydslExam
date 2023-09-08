@@ -9,10 +9,13 @@ import com.green.winey_final.admin.model.QUserOrderDetailVo;
 import com.green.winey_final.admin.model.QUserVo;
 import com.green.winey_final.repository.support.PageCustom;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.ExpressionUtils;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.StringTemplate;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -183,6 +186,7 @@ public class AdminWorkRepositoryImpl implements AdminQdslRepository {
                 .limit(pageable.getPageSize())
                 .fetch();
 
+
         JPAQuery<Long> countQuery = queryFactory
                 .select(orderEntity.orderId.count())
 //                .select(orderEntity.orderId.countDistinct())
@@ -197,9 +201,38 @@ public class AdminWorkRepositoryImpl implements AdminQdslRepository {
                 .on(orderDetailEntity.productEntity.eq(productEntity));
 //                .groupBy(orderEntity.orderId); //groupBy하면 totalElements 제대로 안나옴
 
+
         Page<OrderListVo> map = PageableExecutionUtils.getPage(list, pageable, countQuery::fetchOne);
 
         return new PageCustom<OrderListVo>(map.getContent(), map.getPageable(), map.getTotalElements());
+//        return list;
+    }
+
+    @Override
+    public QueryResults<OrderListVo> selOrderAll2(Pageable pageable) {
+        QueryResults<OrderListVo> list = queryFactory
+                .select(new QOrderListVo(orderEntity.orderId, orderEntity.orderDate.stringValue(), userEntity.email, productEntity.nmKor,
+                        orderDetailEntity.salePrice.sum().intValue(),
+                        orderDetailEntity.quantity.sum().intValue(),
+                        orderEntity.totalOrderPrice.intValue(),
+                        orderEntity.payment.intValue(), storeEntity.nm,
+                        orderEntity.orderStatus.intValue()))
+                .from(orderEntity)
+                .innerJoin(userEntity)
+                .on(orderEntity.userEntity.eq(userEntity))
+                .join(storeEntity)
+                .on(orderEntity.storeEntity.eq(storeEntity))
+                .join(orderDetailEntity)
+                .on(orderEntity.eq(orderDetailEntity.orderEntity))
+                .join(productEntity)
+                .on(orderDetailEntity.productEntity.eq(productEntity))
+                .groupBy(orderEntity.orderId)
+                .orderBy(getAllOrderSpecifiers(pageable))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetchResults();
+
+        return list;
     }
 
     @Override
@@ -262,6 +295,8 @@ public class AdminWorkRepositoryImpl implements AdminQdslRepository {
                     case "address": orders.add(new OrderSpecifier(direction, storeEntity.address)); break;
                     case "storetel": orders.add(new OrderSpecifier(direction, storeEntity.tel)); break;
 
+                    //환불 내역 정렬 //stordid, regionNmId
+//                    case "storetel": orders.add(new OrderSpecifier(direction, storeEntity.tel)); break;
 
 
                 }

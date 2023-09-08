@@ -1,6 +1,7 @@
 package com.green.winey_final.repository.support;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.SliceImpl;
@@ -9,6 +10,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Getter
+@Setter
 public class PageCustom<T> implements Serializable {
 
     private List<T> content;

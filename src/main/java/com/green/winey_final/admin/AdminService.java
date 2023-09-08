@@ -6,6 +6,7 @@ import com.green.winey_final.common.utils.MyFileUtils;
 import com.green.winey_final.repository.*;
 import com.green.winey_final.repository.support.DynamicQueryWhere;
 import com.green.winey_final.repository.support.PageCustom;
+import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -516,8 +517,11 @@ public class AdminService {
 
     //주문 내역
     public PageCustom<OrderListVo> getOrder2(Pageable pageable) {
+        PageCustom<OrderListVo> list = adminWorkRep.selOrderAll(pageable);
+        QueryResults<OrderListVo> list2 = adminWorkRep.selOrderAll2(pageable);
+        list.getPageableCustom().setTotalElements(list2.getTotal());
 
-        return adminWorkRep.selOrderAll(pageable);
+        return list;
     }
 
     //상세 주문 내역 리스트 by orderId

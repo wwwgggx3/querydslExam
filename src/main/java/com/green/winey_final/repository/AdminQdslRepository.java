@@ -2,6 +2,7 @@ package com.green.winey_final.repository;
 
 import com.green.winey_final.admin.model.*;
 import com.green.winey_final.repository.support.PageCustom;
+import com.querydsl.core.QueryResults;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -15,7 +16,9 @@ public interface AdminQdslRepository {
     UserInfo selUserInfoByUserId(Long userId, Pageable pageable);
 
 //    PageCustom<OrderListVo> selOrderAll(Pageable pageable);
+
     PageCustom<OrderListVo> selOrderAll(Pageable pageable); //안됨
+    QueryResults<OrderListVo> selOrderAll2(Pageable pageable); //안됨
 
     PageCustom<StoreVo> selStoreAll(Pageable pageable, String searchType, String str);
 
